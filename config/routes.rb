@@ -65,7 +65,11 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :problems, only: [:index, :show], defaults: { format: 'json' }
+      resources :problems, only: [:index, :show], defaults: { format: 'json' } do
+        member do
+          post :resolve
+        end
+      end
       resources :notices,  only: [:index], defaults: { format: 'json' }
       resources :stats, only: [], defaults: { format: 'json' } do
         collection do

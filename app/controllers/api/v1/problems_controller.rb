@@ -5,15 +5,16 @@ class Api::V1::ProblemsController < ApplicationController
   def show
     result = benchmark("[api/v1/problems_controller/show] query time") do
       begin
-        Problem.only(FIELDS).find(params[:id])
+        Problem.find(params[:id])
       rescue Mongoid::Errors::DocumentNotFound
         head :not_found
         return false
       end
     end
+    full_json = result.as_json(include: :comments).merge("notices" => result.notices.as_json)
 
     respond_to do |format|
-      format.any(:html, :json) { render json: result } # render JSON if no extension specified on path
+      format.any(:html, :json) { render json: full_json } # render JSON if no extension specified on path
       format.xml { render xml: result }
     end
   end
@@ -35,5 +36,11 @@ class Api::V1::ProblemsController < ApplicationController
       format.any(:html, :json) { render json: JSON.dump(results) } # render JSON if no extension specified on path
       format.xml { render xml: results }
     end
+  end
+
+  def resolve
+    problem = Problem.find(params[:id])
+    problem.resolve!(current_user)
+    head :no_content
   end
 end
