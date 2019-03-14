@@ -33,24 +33,6 @@ describe Api::V1::ProblemsController, type: 'controller' do
         expect(returned_problem["_id"]).to eq(@problem.id.to_s)
       end
 
-      it "should return only the correct fields" do
-        get :show, auth_token: @user.authentication_token, format: "json", id: @problem.id
-        returned_problem = JSON.parse(response.body)
-
-        expect(returned_problem.keys).to match_array(%w(
-          app_name
-          first_notice_at
-          message
-          app_id
-          last_notice_at
-          _id
-          resolved
-          resolved_at
-          where
-          notices_count
-          environment))
-      end
-
       it "returns a 404 if the problem cannot be found" do
         get :show, auth_token: @user.authentication_token, format: "json", id: 'IdontExist'
         expect(response.status).to eq(404)
@@ -94,6 +76,18 @@ describe Api::V1::ProblemsController, type: 'controller' do
         expect(response).to be_success
         problems = JSON.load response.body
         expect(problems.length).to eq 4
+      end
+    end
+
+    describe "POST /api/v1/problem/:id/resolve" do
+      it "resolves the issue" do
+        notice = Fabricate(:notice)
+        err = Fabricate(:err, notices: [notice])
+        @problem = Fabricate(:problem, errs: [err])
+
+        post :resolve, auth_token: @user.authentication_token, format: "json", id: @problem.id
+        expect(response.status).to eq(204)
+        expect(@problem.reload.resolved_by).to be == @user
       end
     end
   end
